@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
@@ -62,9 +62,10 @@ class EEGDataset(Dataset):
         return len(self.label)
 
     def __getitem__(self, i):
+        # Copy each read-only mmap sample into writable, contiguous float32 memory.
         return (
-            torch.from_numpy(np.ascontiguousarray(self.eeg[i])).float(),
-            torch.from_numpy(np.ascontiguousarray(self.coords[i])).float(),
+            torch.from_numpy(np.array(self.eeg[i], dtype=np.float32, order="C", copy=True)),
+            torch.from_numpy(np.array(self.coords[i], dtype=np.float32, order="C", copy=True)),
             torch.tensor(int(self.label[i]), dtype=torch.long),
         )
 
@@ -73,9 +74,11 @@ class EEGDataset(Dataset):
 def setup_ddp():
     """Initialize DDP if launched via torchrun, else fall back to single-process."""
     if "RANK" in os.environ and int(os.environ.get("WORLD_SIZE", "1")) > 1:
-        dist.init_process_group(backend="nccl")
         local_rank = int(os.environ["LOCAL_RANK"])
         torch.cuda.set_device(local_rank)
+        dist.init_process_group(
+            backend="nccl", device_id=torch.device("cuda", local_rank)
+        )
         return dist.get_rank(), dist.get_world_size(), local_rank, True
     return 0, 1, 0, False
 
@@ -111,7 +114,7 @@ def evaluate(model, loader, device, n_classes, use_amp):
     for eeg, coords, y in loader:
         eeg = eeg.to(device, non_blocking=True)
         coords = coords.to(device, non_blocking=True)
-        with autocast(enabled=use_amp):
+        with autocast("cuda", dtype=torch.float16, enabled=use_amp):
             logits = model(eeg, coords)
         logits_all.append(logits.float().cpu().numpy())
         y_all.append(y.numpy())
@@ -141,7 +144,7 @@ def run_phase(
             coords = coords.to(device, non_blocking=True)
             y = y.to(device, non_blocking=True)
             optimizer.zero_grad(set_to_none=True)
-            with autocast(enabled=use_amp):
+            with autocast("cuda", dtype=torch.float16, enabled=use_amp):
                 logits = model_ddp(eeg, coords)
                 loss = criterion(logits, y)
             scaler.scale(loss).backward()
@@ -271,7 +274,7 @@ def main():
     criterion = nn.CrossEntropyLoss(weight=cw)
 
     best_state = {"score": -float("inf"), "epoch": -1, "phase": "", "state_dict": None}
-    scaler = GradScaler(enabled=args.amp)
+    scaler = GradScaler("cuda", enabled=args.amp)
 
     # ---- LP phase: freeze encoder, train head only ----
     for prm in model.feature_model.parameters():

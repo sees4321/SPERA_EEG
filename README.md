@@ -1,22 +1,58 @@
-# SPERA_code
-![SPERA overview](figures/overview.png)
-SPERA (Spherical Prior EEG Representation Architecture) is a JEPA-based EEG foundation model with a Legendre spherical prior and a relational spectral regularizer. The manuscript reports pretraining on approximately **80,000 hours from 31,771 subjects across 106 datasets**, with the highest average balanced accuracy across nine downstream tasks.
+# SPERA
 
-## Method and manuscript terminology
+**SPERA: Spherical Prior EEG Foundation Model with Geometry- and Frequency-Aware Latent Prediction**
 
-- **Hybrid attention:** temporal attention within each channel, then spatial attention within each time patch; every fourth block uses full attention.
-- **Pairwise Legendre spatial bias** (Eq. 2): a learnable polynomial expansion of electrode cosine similarity, added to factorized spatial attention scores.
-- **Legendre anchor geometry features** (Eqs. 3–4): channel features built from learnable spherical anchor directions, projected into full-attention queries and keys after temporal RoPE. This produces geometry–geometry and content–geometry interactions (Appendix F.3).
-- **RSReg** (Eq. 5): KL divergence between spectral and predicted-latent similarity distributions, computed within each recording over target tokens, with the diagonal excluded, then averaged over recordings. Spectral views use Hann-windowed log-power in 1–45 Hz.
+Official PyTorch implementation.
 
-See [the manuscript review](docs/manuscript_ver07_review.md) for the changes affecting training and the remaining reproduction questions. This checkout contains no pretrained weights, real datasets, or experiment logs, so the reported scores have not been reproduced here.
+<p align="center">
+  <img src="figures/overview.png" width="95%" alt="SPERA overview">
+</p>
+
+<!--
+[![Proceedings](https://img.shields.io/badge/NeurIPS-Proceedings-4B44CE.svg)](https://proceedings.neurips.cc/paper/XXXX)
+[![Model](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-FFD21E)](https://huggingface.co/USERNAME/MODEL_NAME)
+-->
+
+[![Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b.svg)](https://arxiv.org/abs/2610.10571)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+SPERA (Spherical Prior EEG Representation Architecture) is a JEPA-based EEG foundation model that combines a Legendre spherical prior for electrode geometry, hybrid factorized/full attention, and a relational spectral regularizer. The model is pretrained on approximately **80,000 hours of EEG from 31,771 subjects across 106 datasets** and evaluated across nine downstream tasks.
+
+## Method Overview
+
+- **Hybrid attention:** temporal attention within each channel, followed by spatial attention within each time patch; every fourth block uses full attention.
+- **Pairwise Legendre spatial bias** (Eq. 2): a learnable polynomial expansion of electrode cosine similarity, added to factorized spatial-attention scores.
+- **Legendre anchor encoding** (Eqs. 3–4): channel geometry features constructed from learnable spherical anchor directions and projected into full-attention queries and keys after temporal RoPE. This introduces geometry–geometry and content–geometry interactions (Appendix F.3).
+- **RSReg** (Eq. 5): a relational spectral regularizer that aligns spectral and predicted-latent similarity distributions within each recording. Spectral views use Hann-windowed log-power in the 1–45 Hz band.
+
+Pretrained weights, real datasets, and experiment logs are not included in this repository. Synthetic EEG-like data are provided only for smoke testing; real datasets should be obtained from their original sources and preprocessed as described below.
+
+## Repository Structure
+
+```text
+SPERA_EEG/
+├── spera/                  # SPERA model implementation
+├── configs/
+│   ├── model/              # Model-scale configurations
+│   └── pretrain/           # Pretraining configurations
+├── preprocess/             # Downstream preprocessing scripts
+├── example_data/           # Synthetic data utilities for smoke tests
+├── figures/                # README figures
+├── quickstart.py           # Minimal runnable examples
+├── pretrain.py             # Pretraining entry point
+├── eval_lpft.py            # Linear probing and LPFT evaluation
+└── eval_lpft_seq.py        # Sequence evaluation for ISRUC
+```
 
 ## Installation
 
 ```bash
-# From the downloaded repository root:
+git clone https://github.com/sees4321/SPERA_EEG.git
+cd SPERA_EEG
 pip install torch numpy webdataset accelerate tqdm scikit-learn
 ```
+
+The reference environment used for the paper is Python 3.10, PyTorch 2.10, and CUDA 13.0.
 
 Optional logging:
 
@@ -76,14 +112,14 @@ example_data/
   synthetic-000001.tar
 ```
 
-Then quickstart.py pretrain runs a tiny pretraining smoke test using:
+Then `quickstart.py pretrain` runs a tiny pretraining smoke test using:
 
 ```text
 configs/model/spera_tiny_18m.json
 configs/pretrain/pretrain_smoke.json
 ```
 
-The smoke configuration uses five updates, small token budgets, no mixed precision, and no external logging. It writes to `runs/quickstart` and deliberately shortens the schedules to exercise RSReg. It is a runtime check, not the paper's training recipe. `--mode downstream` and `--mode pretrain` are also accepted.
+The smoke configuration uses five updates, small token budgets, no mixed precision, and no external logging. It writes to `runs/quickstart` and deliberately shortens the schedules so that RSReg is exercised during the test. It is a runtime check, not the paper's training recipe. `--mode downstream` and `--mode pretrain` are also accepted.
 
 You can also run `pretrain.py` directly:
 
@@ -169,11 +205,11 @@ To train on real EEG data, convert your preprocessed recordings into the same We
 
 Pretraining preprocessing:
 
-- notch filter at 50 or 60 Hz according to the recording location
-- bandpass filter to 0.5–75 Hz, then resample to 200 Hz
-- z-score each channel and clip to ±15 standard deviations
-- provide digitized 3D coordinates or coordinates from the corresponding MNE standard montage
-- segment into non-overlapping 10- or 60-second windows; the loader splits oversized windows into shorter contiguous chunks (preferentially 30 seconds) to respect the 4,096-token limit
+- Apply a notch filter at 50 or 60 Hz according to the recording location.
+- Bandpass filter to 0.5–75 Hz, then resample to 200 Hz.
+- Z-score each channel and clip values to ±15 standard deviations.
+- Provide digitized 3D coordinates or coordinates from the corresponding MNE standard montage.
+- Segment recordings into non-overlapping 10- or 60-second windows; the loader splits oversized windows into shorter contiguous chunks (preferentially 30 seconds) to respect the 4,096-token limit.
 
 Filtering and signal normalization must be completed before writing shards; the loader expects preprocessed EEG. Downstream datasets follow their own Appendix D protocols; see [preprocess/README.md](preprocess/README.md).
 
@@ -335,3 +371,21 @@ python eval_lpft_seq.py --data_root /path/to/isruc_seq \
 ```
 
 Sequence arrays have shapes `(N, 20, 6, 6000)`, `(N, 20, 6, 3)`, and `(N, 20)` for EEG, coordinates, and labels. This script trains a one-layer Transformer sequence head, including during its frozen-encoder phase. Use `eval_lpft.py` with non-sequence preprocessing for single-segment linear probing.
+
+## Citation
+
+If you use SPERA in your research, please cite:
+
+```bibtex
+@article{kim2026spera,
+  title={SPERA: Spherical Prior EEG Foundation Model with Geometry-and Frequency-Aware Latent Prediction},
+  author={Kim, Minsu and Kim, Ye-Sung and Jeon, Hyeseong and Hyung, Wooseok and Lee, Joshua and Im, Chang-Hwan},
+  journal={arXiv preprint arXiv:2610.10571},
+  year={2026}
+}
+```
+
+## License
+
+The source code in this repository is released under the [MIT License](LICENSE). Dataset usage is subject to the licenses and data-use agreements of the original data providers.
+
