@@ -2,8 +2,6 @@
 
 **SPERA: Spherical Prior EEG Foundation Model with Geometry- and Frequency-Aware Latent Prediction**
 
-Official PyTorch implementation.
-
 <p align="center">
   <img src="figures/overview.png" width="95%" alt="SPERA overview">
 </p>
@@ -16,7 +14,7 @@ Official PyTorch implementation.
 [![Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b.svg)](https://arxiv.org/abs/2610.10571)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-SPERA (Spherical Prior EEG Representation Architecture) is a JEPA-based EEG foundation model that combines a Legendre spherical prior for electrode geometry, hybrid factorized/full attention, and a relational spectral regularizer. The model is pretrained on approximately **80,000 hours of EEG from 31,771 subjects across 106 datasets** and evaluated across nine downstream tasks.
+SPERA (Spherical Prior EEG Representation Architecture) is a JEPA-based EEG foundation model that combines a Legendre spherical prior for electrode geometry, hybrid factorized/full attention, and a relational spectral regularizer. The model is pretrained on approximately **80,000 hours of EEG from 29,048 subjects across 106 datasets** and evaluated across nine downstream tasks.
 
 ## Method Overview
 
