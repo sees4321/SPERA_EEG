@@ -2,6 +2,10 @@
 
 **SPERA: Spherical Prior EEG Foundation Model with Geometry- and Frequency-Aware Latent Prediction**
 
+[![NeurIPS 2026: Accepted](https://img.shields.io/badge/NeurIPS%202026-Accepted-4B44CE.svg)](https://arxiv.org/abs/2610.10571)
+[![Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b.svg)](https://arxiv.org/abs/2610.10571)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
+
 <p align="center">
   <img src="figures/overview.png" width="95%" alt="SPERA overview">
 </p>
@@ -10,9 +14,6 @@
 [![Proceedings](https://img.shields.io/badge/NeurIPS-Proceedings-4B44CE.svg)](https://proceedings.neurips.cc/paper/XXXX)
 [![Model](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-FFD21E)](https://huggingface.co/USERNAME/MODEL_NAME)
 -->
-
-[![Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b.svg)](https://arxiv.org/abs/2610.10571)
-[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 
 SPERA (Spherical Prior EEG Representation Architecture) is a JEPA-based EEG foundation model that combines a Legendre spherical prior for electrode geometry, hybrid factorized/full attention, and a relational spectral regularizer. The model is pretrained on approximately **80,000 hours of EEG from 29,048 subjects across 106 datasets** and evaluated across nine downstream tasks.
 
@@ -379,7 +380,8 @@ If you use SPERA in your research, please cite:
   title={SPERA: Spherical Prior EEG Foundation Model with Geometry-and Frequency-Aware Latent Prediction},
   author={Kim, Minsu and Kim, Ye-Sung and Jeon, Hyeseong and Hyung, Wooseok and Lee, Joshua and Im, Chang-Hwan},
   journal={arXiv preprint arXiv:2610.10571},
-  year={2026}
+  year={2026},
+  note={Accepted at NeurIPS 2026}
 }
 ```
 
