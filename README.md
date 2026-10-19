@@ -12,7 +12,7 @@
 -->
 
 [![Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b.svg)](https://arxiv.org/abs/2610.10571)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](LICENSE)
 
 SPERA (Spherical Prior EEG Representation Architecture) is a JEPA-based EEG foundation model that combines a Legendre spherical prior for electrode geometry, hybrid factorized/full attention, and a relational spectral regularizer. The model is pretrained on approximately **80,000 hours of EEG from 29,048 subjects across 106 datasets** and evaluated across nine downstream tasks.
 
@@ -385,5 +385,10 @@ If you use SPERA in your research, please cite:
 
 ## License
 
-The source code in this repository is released under the [MIT License](LICENSE). Dataset usage is subject to the licenses and data-use agreements of the original data providers.
+The source code in this repository is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
 
+Noncommercial use, modification, and redistribution are permitted under the license terms. The license also expressly permits use by educational institutions and public research organizations, regardless of their source of funding or obligations resulting from that funding. See [LICENSE](LICENSE) for the full terms and permitted purposes.
+
+For commercial use outside these permissions, contact the [repository maintainer](https://github.com/sees4321) to arrange a separate commercial license.
+
+Dataset usage is subject to the licenses and data-use agreements of the original data providers.
